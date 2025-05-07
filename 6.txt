@@ -1,0 +1,137 @@
+def prompt_int(message, min_val=1, max_val=10):
+    while True:
+        try:
+            val = int(input(message))
+            if min_val <= val <= max_val:
+                return val
+        except ValueError:
+            pass
+        print(f"Please enter an integer between {min_val} and {max_val}.")
+
+def prompt_yes_no(message):
+    while True:
+        ans = input(message + " (yes/no): ").strip().lower()
+        if ans in ("yes", "no"):
+            return ans == "yes"
+        print("Please answer 'yes' or 'no'.")
+
+def evaluate_performance(name, rank):
+    print(f"\n--- Performance Evaluation for {name} ({rank}) ---")
+    punctuality    = prompt_int("Rate punctuality (1–10): ")
+    work_quality   = prompt_int("Rate work quality (1–10): ")
+    teamwork       = prompt_int("Rate teamwork (1–10): ")
+    leadership     = prompt_int("Rate leadership skills (1–10): ")
+    target_met     = prompt_yes_no("Have they met their annual targets?")
+    years_exp      = prompt_int("Years of experience in this role: ", 0, 50)
+    last_training  = prompt_int("Years since last formal training: ", 0, 10)
+
+    scores = [punctuality, work_quality, teamwork, leadership]
+    overall = sum(scores) / len(scores)
+    print(f"\nOverall Score: {overall:.2f}/10")
+
+    # Expert commentary
+    if overall >= 8 and target_met:
+        print("Expert: Outstanding performance! 🎉")
+        print("Recommendation: Consider them for a leadership stretch assignment or bonus review.")
+    elif overall >= 6:
+        print("Expert: Solid performance with room for growth.")
+        # Point out weakest area
+        weakest = ["Punctuality", "Work Quality", "Teamwork", "Leadership"][scores.index(min(scores))]
+        print(f"Observation: {weakest} is the lowest-rated skill.")
+        print("Recommendation:")
+        if weakest == "Leadership":
+            print(" - Enroll in a mentoring program to build leadership confidence.")
+        elif weakest == "Teamwork":
+            print(" - Pair with a senior peer on a cross‑functional project.")
+        else:
+            print(" - Schedule targeted workshops or weekly one‑on‑one coaching.")
+    else:
+        print("Expert: Performance needs improvement. 🚧")
+        print("Recommendation:")
+        print(" - Set up a performance improvement plan (PIP) with clear milestones.")
+        print(" - Arrange a refresher training in weak areas.")
+        print(" - Schedule bi‑weekly check‑ins to track progress.")
+    
+    # Training recency
+    if last_training > 2:
+        print("Note: It’s been over two years since their last training. Consider an update.")
+
+def suggest_training():
+    print("\n--- Training Recommendation ---")
+    area = input("Area to improve (Leadership / Technical / Communication): ").strip().lower()
+    mapping = {
+        "leadership":    "Leadership & Management Workshop",
+        "technical":     "Advanced Technical Skills Bootcamp",
+        "communication": "Effective Communication Seminar"
+    }
+    print("Expert: Recommended program →", mapping.get(area, "General Professional Development"))
+
+def calculate_bonus(name, rank):
+    print(f"\n--- Bonus Calculation for {name} ({rank}) ---")
+    base = float(input("Enter base salary (INR): "))
+    perf = float(input("Enter final performance score (1–10): "))
+    mult = {"Intern": .05, "Junior Developer": .1, "Senior Developer": .15,
+            "Manager": .2, "Director": .25}.get(rank, .1)
+    bonus = (perf / 10) * base * mult
+    print(f"Expert: Estimated bonus = INR {bonus:.2f}")
+
+def promotion_eligibility(name, rank):
+    print(f"\n--- Promotion Eligibility for {name} ({rank}) ---")
+    yrs = int(input("Years of experience: "))
+    since_promo = int(input("Years since last promotion: "))
+    perf = float(input("Average performance score (1–10): "))
+    if perf >= 8 and yrs > 3 and since_promo > 2:
+        print("Expert: Eligible for promotion consideration! ✅")
+    else:
+        print("Expert: Not yet eligible. Focus on these areas:")
+        print(" - Increase impact on key projects.")
+        print(" - Seek stretch assignments to broaden skills.")
+
+def work_life_balance(name):
+    print(f"\n--- Work‑Life Balance Check for {name} ---")
+    hours = int(input("Average weekly hours: "))
+    if hours > 50:
+        print("Expert: High workload detected! ⚠️")
+        print("Suggestion: Redistribute tasks or cap weekly hours to 45.")
+    else:
+        print("Expert: Healthy balance 👍")
+
+def employee_evaluation_system():
+    print("Welcome to the Enhanced Employee Performance Evaluation System\n")
+    ranks = ["Intern", "Junior Developer", "Senior Developer", "Manager", "Director"]
+    while True:
+        cmd = input("You: ").strip().lower()
+        if cmd in ("hi", "hello"):
+            print("Expert: Hi there! What would you like to do today?")
+        elif cmd in ("bye", "exit"):
+            print("Expert: Goodbye! Stay productive.")
+            break
+        elif "evaluate" in cmd or "performance review" in cmd:
+            evaluator = input("Your rank (Managers only): ").strip().title()
+            if evaluator != "Manager":
+                print("Expert: Sorry, only Managers can perform evaluations.")
+                continue
+            name = input("Employee name: ").strip().title()
+            rank = input(f"Rank ({', '.join(ranks)}): ").strip().title()
+            if rank not in ranks or rank == "Manager":
+                print("Expert: Invalid rank.")
+                continue
+            evaluate_performance(name, rank)
+        elif "suggest training" in cmd or "training program" in cmd:
+            suggest_training()
+        elif "calculate bonus" in cmd:
+            name = input("Employee name: ").strip().title()
+            rank = input(f"Rank ({', '.join(ranks)}): ").strip().title()
+            calculate_bonus(name, rank)
+        elif "promotion eligibility" in cmd:
+            name = input("Employee name: ").strip().title()
+            rank = input(f"Rank ({', '.join(ranks)}): ").strip().title()
+            promotion_eligibility(name, rank)
+        elif "work-life balance" in cmd:
+            name = input("Employee name: ").strip().title()
+            work_life_balance(name)
+        else:
+            print("Expert: I didn't understand that. You can ask me to evaluate, suggest training, calculate bonus, check promotion eligibility, or assess work‑life balance.")
+            
+if __name__ == "__main__":
+    employee_evaluation_system()
