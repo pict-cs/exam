@@ -149,3 +149,10 @@ main()
 # Litter box training, Come when called, Play fetch, High-five
 # You: bye
 # Pet Bot: Thanks for chatting! We hope your pet journey is amazing!
+
+
+
+
+
+#### pip install nltk
+     sudo apt-get install python3-tk  ( if tkinter doesnt work )
