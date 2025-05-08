@@ -156,3 +156,9 @@ main()
 
 #### pip install nltk
      sudo apt-get install python3-tk  ( if tkinter doesnt work )
+OR sudo apt install python3-tk
+
+#### to install pip if not installed
+sudo apt update
+sudo apt install python3-pip
+
