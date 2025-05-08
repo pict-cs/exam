@@ -127,6 +127,26 @@ void kruskalMST(int V, vector<Edge> &edges) {
     cout << "Total Cost of Kruskal's MST: " << totalCost << "\n";
 }
 
+// ---------- SELECTION SORT ----------
+void selectionSort(vector<int>& arr) {
+    int n = arr.size();
+    for (int i = 0; i < n - 1; i++) {
+        int minIndex = i;
+        for (int j = i + 1; j < n; j++) {
+            if (arr[j] < arr[minIndex]) {
+                minIndex = j;
+            }
+        }
+        swap(arr[i], arr[minIndex]);
+    }
+
+    cout << "Sorted array using Selection Sort: ";
+    for (int i = 0; i < n; i++) {
+        cout << arr[i] << " ";
+    }
+    cout << "\n";
+}
+
 // ---------- MAIN MENU ----------
 int main() {
     int choice;
@@ -135,7 +155,8 @@ int main() {
         cout << "1. Prim's MST\n";
         cout << "2. Job Scheduling\n";
         cout << "3. Kruskal's MST\n";
-        cout << "4. Exit\n";
+        cout << "4. Selection Sort\n";
+        cout << "5. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -173,13 +194,24 @@ int main() {
             kruskalMST(V, edges);
         }
         else if (choice == 4) {
+            int n;
+            cout << "Enter number of elements for sorting: ";
+            cin >> n;
+            vector<int> arr(n);
+            cout << "Enter elements:\n";
+            for (int i = 0; i < n; i++) {
+                cin >> arr[i];
+            }
+            selectionSort(arr);
+        }
+        else if (choice == 5) {
             cout << "Exiting...\n";
         }
         else {
             cout << "Invalid choice.\n";
         }
 
-    } while (choice != 4);
+    } while (choice != 5);
 
     return 0;
 }
