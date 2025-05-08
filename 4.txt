@@ -182,25 +182,25 @@ public:
             cout << endl;
         }
     }
-   
-    map<int,string> setColor(int m, int color[])
+
+    map<int, string> setColor(int m)
     {
-        map<int,string> VColor;
-        for(int i=1;i<=m;i++)
+        map<int, string> VColor;
+        for (int i = 1; i <= m; i++)
         {
             string shade;
-            cout<<"\nEnter colour shade: ";
-            cin>>shade;
-            VColor[i]=shade;
+            cout << "\nEnter colour shade for " << i << ": ";
+            cin >> shade;
+            VColor[i] = shade;
         }
         return VColor;
     }
 
-    bool isSafe(int v,vector<vector<int>> &graph, int color[], int c, int V)
+    bool isSafe(int v, vector<vector<int>> &graph, int color[], int c, int V)
     {
-        for(int i=0;i<V;i++)
+        for (int i = 0; i < V; i++)
         {
-            if(graph[v][i] && c==color[i])
+            if (graph[v][i] && c == color[i])
             {
                 return false;
             }
@@ -208,38 +208,82 @@ public:
         return true;
     }
 
-    bool gColor(vector<vector<int>> &graph, int m, int color[], int v, int V)
+    // -------- BACKTRACKING ----------
+    bool gColorBacktracking(vector<vector<int>> &graph, int m, int color[], int v, int V)
     {
-        if(v==V)
+        if (v == V)
         {
             return true;
         }
-        for(int c=1;c<=m;c++)
+        for (int c = 1; c <= m; c++)
         {
-            if(isSafe(v,graph,color,c,V))
+            if (isSafe(v, graph, color, c, V))
             {
-                color[v]=c;
-                if(gColor(graph,m,color,v+1,V))
+                color[v] = c;
+                if (gColorBacktracking(graph, m, color, v + 1, V))
                 {
                     return true;
                 }
-                color[v]=0;
+                color[v] = 0;
             }
         }
         return false;
     }
 
-    void printColor(map<int,string> ColorVertex, int color[], int V)
+    // -------- BRANCH AND BOUND ----------
+    bool gColorBranchBound(vector<vector<int>> &graph, int m, int color[], int v, int V)
     {
-        for(int i=0;i<V;i++)
+        stack<int> S;
+        S.push(v);
+        while (!S.empty())
         {
-            if(color[i]!=0)
+            int u = S.top();
+            S.pop();
+
+            bool assigned = false;
+            for (int c = 1; c <= m; c++)
             {
-                cout<<"\nVertex: "<<i<<"--->Colour: "<<ColorVertex[color[i]]<<endl;
+                if (isSafe(u, graph, color, c, V))
+                {
+                    color[u] = c;
+                    assigned = true;
+                    break;
+                }
+            }
+
+            if (!assigned)
+            {
+                return false; // prune branch
+            }
+
+            for (int i = 0; i < V; i++)
+            {
+                if (color[i] == 0 && graph[u][i])
+                {
+                    S.push(i);
+                }
+            }
+        }
+        // Check if all vertices are colored
+        for (int i = 0; i < V; i++)
+        {
+            if (color[i] == 0)
+                return false;
+        }
+        return true;
+    }
+
+    void printColor(map<int, string> ColorVertex, int color[], int V)
+    {
+        for (int i = 0; i < V; i++)
+        {
+            if (color[i] != 0)
+            {
+                cout << "Vertex: " << i << " ---> Colour: " << ColorVertex[color[i]] << endl;
             }
             else
             {
-                cout<<"\nVertex: "<<i<<"--->Colour: No Colour"<<endl;
+                cout << "Vertex: " << i << " ---> Colour: No Colour" << endl;
             }
         }
     }
@@ -254,23 +298,59 @@ int main()
     vector<vector<int>> graph = gc.create(V);
     gc.display(graph, V);
     int m;
-    cout<<"Enter number of colours available: ";
-    cin>>m;
-    int color[V]={0};
-    map<int,string> ColorVertex;
-    ColorVertex=gc.setColor(m,color);
-    int v;
-    cout<<"\nEnter starting vertex: ";
-    cin>>v;
-    bool result=gc.gColor(graph,m,color,v,V);
-    gc.printColor(ColorVertex, color, V);
-    if(result==1)
+    cout << "Enter number of colours available: ";
+    cin >> m;
+    map<int, string> ColorVertex = gc.setColor(m);
+
+    while (true)
     {
-        cout<<"\nGraph coloring possible!"<<endl;
+        cout << "\n====== MENU ======" << endl;
+        cout << "1. Branch and Bound" << endl;
+        cout << "2. Backtracking" << endl;
+        cout << "3. Exit" << endl;
+        cout << "Enter your choice: ";
+        int choice;
+        cin >> choice;
+
+        if (choice == 3)
+        {
+            cout << "Exiting program." << endl;
+            break;
+        }
+
+        int color[V] = {0};
+        int v;
+        cout << "\nEnter starting vertex: ";
+        cin >> v;
+        bool result = false;
+
+        switch (choice)
+        {
+        case 1:
+            result = gc.gColorBranchBound(graph, m, color, v, V);
+            break;
+        case 2:
+            result = gc.gColorBacktracking(graph, m, color, v, V);
+            break;
+        default:
+            cout << "Invalid choice! Try again." << endl;
+            continue;
+        }
+
+        gc.printColor(ColorVertex, color, V);
+        if (result)
+        {
+            cout << "\nGraph coloring possible!" << endl;
+        }
+        else
+        {
+            cout << "\nGraph coloring not possible!" << endl;
+        }
     }
-    else
-    {
-        cout<<"\nGraph coloring not possible!"<<endl;
-    }
+
     return 0;
 }
+
+
+
+  
