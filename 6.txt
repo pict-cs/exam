@@ -136,7 +136,69 @@ def employee_evaluation_system():
 if __name__ == "__main__":
     employee_evaluation_system()
 
+#### conversation
+Welcome to the Enhanced Employee Performance Evaluation System
 
+You: Hi
+Expert: Hi there! What would you like to do today?
+
+You: I’d like to evaluate performance
+Expert: Your rank (Managers only): Manager
+
+You: Employee name: Alice Johnson
+Expert: Rank (Intern, Junior Developer, Senior Developer, Manager, Director): Senior Developer
+
+--- Performance Evaluation for Alice Johnson (Senior Developer) ---
+Rate punctuality (1–10): 8
+Rate work quality (1–10): 9
+Rate teamwork (1–10): 7
+Rate leadership skills (1–10): 6
+Have they met their annual targets? (yes/no): yes
+Years of experience in this role: 5
+Years since last formal training: 3
+
+Overall Score: 7.50/10
+Expert: Solid performance with room for growth.
+Observation: Leadership is the lowest-rated skill.
+Recommendation:
+ - Enroll in a mentoring program to build leadership confidence.
+Note: It’s been over two years since their last training. Consider an update.
+
+You: suggest training program
+Expert: Area to improve (Leadership / Technical / Communication): communication
+Expert: Recommended program → Effective Communication Seminar
+
+You: calculate bonus
+Expert: Employee name: Alice Johnson
+Expert: Rank (Intern, Junior Developer, Senior Developer, Manager, Director): Senior Developer
+
+--- Bonus Calculation for Alice Johnson (Senior Developer) ---
+Enter base salary (INR): 1200000
+Enter final performance score (1–10): 7.5
+Expert: Estimated bonus = INR 135000.00
+
+You: promotion eligibility
+Expert: Employee name: Alice Johnson
+Expert: Rank (Intern, Junior Developer, Senior Developer, Manager, Director): Senior Developer
+
+--- Promotion Eligibility for Alice Johnson (Senior Developer) ---
+Years of experience: 5
+Years since last promotion: 3
+Average performance score (1–10): 7.5
+Expert: Not yet eligible. Focus on these areas:
+ - Increase impact on key projects.
+ - Seek stretch assignments to broaden skills.
+
+You: work-life balance
+Expert: Employee name: Alice Johnson
+
+--- Work‑Life Balance Check for Alice Johnson ---
+Average weekly hours: 55
+Expert: High workload detected! ⚠️
+Suggestion: Redistribute tasks or cap weekly hours to 45.
+
+You: bye
+Expert: Goodbye! Stay productive.
 
 
 
