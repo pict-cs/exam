@@ -1,0 +1,116 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// Global counters for comparisons
+int compDeterministic = 0;
+int compRandomized = 0;
+
+// Partition for deterministic quicksort
+int partitionDeterministic(vector<int>& arr, int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        compDeterministic++; // Count this comparison
+        if (arr[j] < pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+    swap(arr[i + 1], arr[high]);
+    return i + 1;
+}
+
+// Partition for randomized quicksort
+int partitionRandomized(vector<int>& arr, int low, int high) {
+    int randomPivotIndex = low + rand() % (high - low + 1);
+    swap(arr[randomPivotIndex], arr[high]);
+    int pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        compRandomized++; // Count this comparison
+        if (arr[j] < pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+    swap(arr[i + 1], arr[high]);
+    return i + 1;
+}
+
+// Deterministic QuickSort
+void quickSortDeterministic(vector<int>& arr, int low, int high) {
+    if (low < high) {
+        int pi = partitionDeterministic(arr, low, high);
+        quickSortDeterministic(arr, low, pi - 1);
+        quickSortDeterministic(arr, pi + 1, high);
+    }
+}
+
+// Randomized QuickSort
+void quickSortRandomized(vector<int>& arr, int low, int high) {
+    if (low < high) {
+        int pi = partitionRandomized(arr, low, high);
+        quickSortRandomized(arr, low, pi - 1);
+        quickSortRandomized(arr, pi + 1, high);
+    }
+}
+
+// Print array
+void printArray(const vector<int>& arr) {
+    for (int x : arr) cout << x << " ";
+    cout << endl;
+}
+
+int main() {
+    vector<int> arr;
+    int choice;
+    srand(time(0));
+
+    while (true) {
+        cout << "\n=== QuickSort Menu ===\n";
+        cout << "1. Input Array\n";
+        cout << "2. Deterministic QuickSort\n";
+        cout << "3. Randomized QuickSort\n";
+        cout << "4. Exit\n";
+        cout << "Enter choice: "; 
+        cin >> choice;
+
+        if (choice == 1) {
+            int n;
+            cout << "Enter number of elements: ";
+            cin >> n;
+            arr.resize(n);
+            cout << "Enter elements: ";
+            for (int i = 0; i < n; i++) cin >> arr[i];
+        }
+        else if (choice == 2) {
+            if (arr.empty()) { cout << "Array is empty. Enter the array first.\n"; continue; }
+            vector<int> arrCopy = arr;
+            compDeterministic = 0; // reset counter before sorting
+            quickSortDeterministic(arrCopy, 0, arrCopy.size() - 1);
+            cout << "\nSorted Array (Deterministic QuickSort): ";
+            printArray(arrCopy);
+            cout << "Number of comparisons: " << compDeterministic << endl;
+        }
+        else if (choice == 3) {
+            if (arr.empty()) { cout << "Array is empty. Enter the array first.\n"; continue; }
+            vector<int> arrCopy = arr;
+            compRandomized = 0; // reset counter before sorting
+            quickSortRandomized(arrCopy, 0, arrCopy.size() - 1);
+            cout << "\nSorted Array (Randomized QuickSort): ";
+            printArray(arrCopy);
+            cout << "Number of comparisons: " << compRandomized << endl;
+        }
+        else if (choice == 4) {
+            cout << "Exiting...\n";
+            break;
+        }
+        else {
+            cout << "Invalid choice. Try again.\n";
+        }
+    }
+
+    return 0;
+}

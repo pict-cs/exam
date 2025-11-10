@@ -1,0 +1,351 @@
+/**
+ * Problem Statement: Write a program to solve a 0-1 Knapsack problem using dynamic programming 
+ * using a menu-driven approach, printing only max value & selection vector.
+ */
+
+//Using only DP
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int knapsack(int capacity, const vector<int>& weights, const vector<int>& values, int n) {
+
+    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, 0));
+
+    // Fill DP table
+    for (int i = 1; i <= n; i++) {
+        for (int w = 1; w <= capacity; w++) {
+            if (weights[i - 1] <= w) {
+                dp[i][w] = max(dp[i - 1][w],
+                               values[i - 1] + dp[i - 1][w - weights[i - 1]]);
+            } else {
+                dp[i][w] = dp[i - 1][w];
+            }
+        }
+    }
+
+    // Find selected items (backtracking)
+    vector<int> selected(n, 0);
+    int res = dp[n][capacity];
+    int w = capacity;
+
+    for (int i = n; i > 0 && res > 0; i--) {
+        if (res == dp[i - 1][w]) continue;
+
+        selected[i - 1] = 1;
+        res -= values[i - 1];
+        w -= weights[i - 1];
+    }
+
+    // Print selection vector
+    cout << "\nSelection Vector: (";
+    for (int i = 0; i < n; i++) {
+        cout << selected[i];
+        if (i != n - 1) cout << ", ";
+    }
+    cout << ")\n";
+
+    return dp[n][capacity];
+}
+
+int main() {
+
+    int choice;
+    int n = 0, capacity = 0;
+    vector<int> weights;
+    vector<int> values;
+
+    while (true) {
+        cout << "\n----- 0-1 Knapsack Menu -----\n";
+        cout << "1. Enter Items (weights, values & max capacity)\n";
+        cout << "2. Compute Maximum Value & Selection Vector\n";
+        cout << "3. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+
+        case 1:
+            cout << "Enter number of items: ";
+            cin >> n;
+
+            weights.resize(n);
+            values.resize(n);
+
+            cout << "Enter weights of items:\n";
+            for (int i = 0; i < n; i++)
+                cin >> weights[i];
+
+            cout << "Enter values of items:\n";
+            for (int i = 0; i < n; i++)
+                cin >> values[i];
+
+            cout << "Enter maximum capacity of knapsack: ";
+            cin >> capacity;
+
+            cout << "Data stored successfully!\n";
+            break;
+
+        case 2:
+            if (n == 0 || capacity == 0) {
+                cout << "Please enter items first!\n";
+            } else {
+                cout << "\nMaximum value obtainable: "
+                     << knapsack(capacity, weights, values, n) << endl;
+            }
+            break;
+
+        case 3:
+            cout << "Exiting... Thank you!\n";
+            return 0;
+
+        default:
+            cout << "Invalid choice! Please try again.\n";
+        }
+    }
+
+    return 0;
+}
+
+
+// Using both DP and Branch and bound
+
+/**
+ * Problem Statement:
+ * Write a program to solve 0-1 Knapsack using:
+ * 1. Dynamic Programming
+ * 2. Branch & Bound
+ * (Menu-driven; print max value & selection vector only)
+ */
+
+#include <bits/stdc++.h>
+using namespace std;
+
+/* ----------------------------------------------------
+   ✅ Dynamic Programming Implementation
+---------------------------------------------------- */
+int knapsackDP(int capacity, const vector<int>& weights, const vector<int>& values, int n) {
+
+    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, 0));
+
+    // Fill DP table
+    for (int i = 1; i <= n; i++) {
+        for (int w = 1; w <= capacity; w++) {
+            if (weights[i - 1] <= w)
+                dp[i][w] = max(dp[i - 1][w], values[i - 1] + dp[i - 1][w - weights[i - 1]]);
+            else
+                dp[i][w] = dp[i - 1][w];
+        }
+    }
+
+    // Backtrack to find selected items
+    vector<int> selected(n, 0);
+    int res = dp[n][capacity], w = capacity;
+
+    for (int i = n; i > 0 && res > 0; i--) {
+        if (res == dp[i - 1][w]) continue;
+        selected[i - 1] = 1;
+        res -= values[i - 1];
+        w -= weights[i - 1];
+    }
+
+    cout << "\nSelection Vector (DP): (";
+    for (int i = 0; i < n; i++)
+        cout << selected[i] << (i == n - 1 ? "" : ", ");
+    cout << ")\n";
+
+    return dp[n][capacity];
+}
+
+
+/* ----------------------------------------------------
+   ✅ Branch & Bound Implementation
+---------------------------------------------------- */
+
+struct Node {
+    int level, profit, weight;
+    double bound;
+    vector<int> selected;
+};
+
+// Compute upper bound
+double calculateBound(Node u, int n, int capacity,
+                      const vector<int>& weights,
+                      const vector<int>& values) {
+
+    if (u.weight >= capacity) return 0;
+
+    double bound = u.profit;
+    int j = u.level + 1;
+    int totweight = u.weight;
+
+    while (j < n && totweight + weights[j] <= capacity) {
+        totweight += weights[j];
+        bound += values[j];
+        j++;
+    }
+
+    if (j < n) {
+        bound += (double)(capacity - totweight) * values[j] / weights[j];
+    }
+
+    return bound;
+}
+
+
+// Branch & Bound knapsack
+int knapsackBB(int capacity, vector<int> weights, vector<int> values, int n) {
+
+    // Sort items by (value/weight)
+    vector<int> idx(n);
+    iota(idx.begin(), idx.end(), 0);
+
+    sort(idx.begin(), idx.end(), [&](int a, int b) {
+        return (double)values[a] / weights[a] > (double)values[b] / weights[b];
+    });
+
+    // Rearrange arrays according to sorted order
+    vector<int> W(n), V(n);
+    for (int i = 0; i < n; i++) {
+        W[i] = weights[idx[i]];
+        V[i] = values[idx[i]];
+    }
+
+    queue<Node> Q;
+    Node u, v;
+
+    v.level = -1;
+    v.profit = 0;
+    v.weight = 0;
+    v.selected = vector<int>(n, 0);
+    v.bound = calculateBound(v, n, capacity, W, V);
+
+    int maxProfit = 0;
+    vector<int> bestSelected(n);
+
+    Q.push(v);
+
+    while (!Q.empty()) {
+        v = Q.front(); Q.pop();
+
+        if (v.level == n - 1) continue;
+
+        u.level = v.level + 1;
+
+        // Try including this item
+        u.weight = v.weight + W[u.level];
+        u.profit = v.profit + V[u.level];
+        u.selected = v.selected;
+        u.selected[u.level] = 1;
+
+        if (u.weight <= capacity && u.profit > maxProfit) {
+            maxProfit = u.profit;
+            bestSelected = u.selected;
+        }
+
+        u.bound = calculateBound(u, n, capacity, W, V);
+        if (u.bound > maxProfit) Q.push(u);
+
+        // Try excluding this item
+        u.weight = v.weight;
+        u.profit = v.profit;
+        u.selected = v.selected;
+        u.selected[u.level] = 0;
+        u.bound = calculateBound(u, n, capacity, W, V);
+        if (u.bound > maxProfit) Q.push(u);
+    }
+
+    // Re-map selection vector to original item order
+    vector<int> selectedOriginal(n, 0);
+    for (int i = 0; i < n; i++)
+        selectedOriginal[idx[i]] = bestSelected[i];
+
+    cout << "\nSelection Vector (Branch & Bound): (";
+    for (int i = 0; i < n; i++)
+        cout << selectedOriginal[i] << (i == n - 1 ? "" : ", ");
+    cout << ")\n";
+
+    return maxProfit;
+}
+
+
+/* ----------------------------------------------------
+   ✅ MAIN — Menu Driven
+---------------------------------------------------- */
+
+int main() {
+
+    int choice;
+    int n = 0, capacity = 0;
+    vector<int> weights;
+    vector<int> values;
+
+    while (true) {
+        cout << "\n----- 0-1 Knapsack Menu -----\n";
+        cout << "1. Enter Items (weights, values & max capacity)\n";
+        cout << "2. Compute using Dynamic Programming\n";
+        cout << "3. Compute using Branch & Bound\n";
+        cout << "4. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1:
+            cout << "Enter number of items: ";
+            cin >> n;
+
+            weights.resize(n);
+            values.resize(n);
+
+            cout << "Enter weights of items:\n";
+            for (int i = 0; i < n; i++)
+                cin >> weights[i];
+
+            cout << "Enter values of items:\n";
+            for (int i = 0; i < n; i++)
+                cin >> values[i];
+
+            cout << "Enter maximum capacity of knapsack: ";
+            cin >> capacity;
+
+            cout << "Data stored successfully!\n";
+            break;
+
+        case 2:
+            if (n == 0 || capacity == 0)
+                cout << "Please enter items first!\n";
+            else
+                cout << "\nMaximum value (DP): "
+                     << knapsackDP(capacity, weights, values, n) << endl;
+            break;
+
+        case 3:
+            if (n == 0 || capacity == 0)
+                cout << "Please enter items first!\n";
+            else
+                cout << "\nMaximum value (Branch & Bound): "
+                     << knapsackBB(capacity, weights, values, n) << endl;
+            break;
+
+        case 4:
+            cout << "Exiting... Thank you!\n";
+            return 0;
+
+        default:
+            cout << "Invalid choice! Please try again.\n";
+        }
+    }
+}
+
+
+/* 
+Enter your choice: 1
+Enter number of items: 4
+Enter weights of items:
+2 3 4 5
+Enter values of items:
+1 2 5 6
+Enter maximum capacity of knapsack: 8
+Data stored successfully!
+*/
+
