@@ -1,0 +1,62 @@
+# K-Means Clustering on sales_data_sample.csv
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+
+
+# Step 1: Load dataset (make sure sales_data_sample.csv is in the same folder)
+data = pd.read_csv("sales_data_sample.csv", encoding="latin1")
+
+print("Dataset shape:", data.shape)
+data.head()
+
+
+# Step 2: Select numeric features for clustering
+numeric_cols = data.select_dtypes(include=['int64', 'float64']).columns
+print("Numeric columns used for clustering:", numeric_cols)
+
+X = data[numeric_cols].dropna()   # drop missing values
+
+
+# Step 3: Normalize data
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+
+# Step 4: Elbow method to find optimal clusters
+wcss = []
+for k in range(1, 11):
+    kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
+    kmeans.fit(X_scaled)
+    wcss.append(kmeans.inertia_)
+
+
+plt.plot(range(1, 11), wcss, marker='o')
+plt.title("Elbow Method")
+plt.xlabel("Number of clusters")
+plt.ylabel("WCSS")
+plt.show()
+
+
+# Step 5: Apply KMeans with chosen clusters (say 3 or 4 depending on elbow plot)
+kmeans = KMeans(n_clusters=3, init='k-means++', random_state=42)
+clusters = kmeans.fit_predict(X_scaled)
+
+
+# Add cluster labels to dataset
+X['Cluster'] = clusters
+X.head()
+
+
+    # Step 6: Hierarchical clustering (optional)
+    linked = linkage(X_scaled, method='ward')
+    plt.figure(figsize=(10, 5))
+    dendrogram(linked, truncate_mode='lastp', p=20, leaf_rotation=45, leaf_font_size=10)
+    plt.title("Hierarchical Clustering Dendrogram")
+    plt.xlabel("Sample index or (cluster size)")
+    plt.ylabel("Distance")
+    plt.show()
+
+

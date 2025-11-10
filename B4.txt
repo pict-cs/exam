@@ -1,0 +1,48 @@
+# Gradient Descent to find local minima of y=(x+3)^2
+import matplotlib.pyplot as plt
+
+
+# Function and its derivative
+def f(x):
+    return (x + 3)**2
+
+def f_prime(x):
+    return 2 * (x + 3)
+
+
+# Gradient Descent Implementation
+def gradient_descent(starting_point, learning_rate, epochs):
+    x = starting_point
+    history = [x]
+    
+    for _ in range(epochs):
+        grad = f_prime(x)
+        x = x - learning_rate * grad
+        history.append(x)
+    return x, history
+
+
+# Parameters
+x0 = 2              # starting point
+alpha = 0.1         # learning rate
+epochs = 50         # number of iterations
+
+
+# Run Gradient Descent
+min_x, history = gradient_descent(x0, alpha, epochs)
+
+print("Local minima occurs at x =", round(min_x, 4))
+print("Function value at minima y =", round(f(min_x), 4))
+
+
+# Plotting
+x_vals = range(-10, 5)
+y_vals = [f(x) for x in x_vals]
+
+plt.plot(x_vals, y_vals, label="y=(x+3)^2")
+plt.scatter(history, [f(x) for x in history], color='red', s=30, label="GD steps")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.title("Gradient Descent for y=(x+3)^2")
+plt.legend()
+plt.show()

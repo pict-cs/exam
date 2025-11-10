@@ -1,0 +1,127 @@
+# ------------------------------
+#  IMPORT LIBRARIES
+# ------------------------------
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+
+from sklearn.metrics import r2_score, mean_squared_error
+
+
+# ------------------------------
+#  LOAD DATA
+# ------------------------------
+ds = pd.read_csv("uber.csv")
+ds.head()
+
+
+#basic info check
+ds.info()
+ds.describe()
+
+
+#1 PREPROCESSING
+#drop null values
+ds.isna().sum()
+ds.dropna(inplace=True)
+
+
+# drop unnecessary cols
+ds.drop(["Unnamed: 0"], axis=1, inplace=True)
+
+
+#Convert pickup time to hour (feature engineering)
+ds["pickup_datetime"] = pd.to_datetime(ds["pickup_datetime"])
+ds["hour"] = ds["pickup_datetime"].dt.hour
+ds.drop(["pickup_datetime","key"], axis=1, inplace=True)
+
+
+#Create distance feature (simple euclidean)
+def get_distance(lat1,lon1,lat2,lon2):
+    return np.sqrt((lat2-lat1)**2 + (lon2-lon1)**2)
+
+ds["distance"] = ds.apply(lambda r: get_distance(
+    r["pickup_latitude"], r["pickup_longitude"],
+    r["dropoff_latitude"], r["dropoff_longitude"]), axis=1)
+
+
+#Haversine Distance
+# import math
+# def get_distance(lat1, lon1, lat2, lon2):
+#    R = 6371  # Radius of Earth in kilometers
+
+#    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+#    dlat = lat2 - lat1
+#    dlon = lon2 - lon1
+#    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+#    c = 2 * math.asin(math.sqrt(a))
+#    return R * c
+
+
+#2. IDENTIFY & REMOVE OUTLIERS
+#Passenger count outlier
+sns.scatterplot(x=ds["passenger_count"], y=ds["fare_amount"])
+ds = ds[ds["passenger_count"] < 10]   # remove crazy values
+
+
+#Remove outliers using IQR
+def remove_outliers(feature):
+    q1 = ds[feature].quantile(0.25)
+    q3 = ds[feature].quantile(0.75)
+    iqr = q3 - q1
+    low = q1 - 1.5*iqr
+    high = q3 + 1.5*iqr
+    return ds[(ds[feature] > low) & (ds[feature] < high)]
+
+ds = remove_outliers("fare_amount")
+ds = remove_outliers("distance")
+
+
+#3. CORRELATION CHECK
+corr = ds.corr()
+sns.heatmap(corr, annot=False, cmap="coolwarm")
+
+
+#TRAIN TEST SPLIT
+X = ds.drop("fare_amount", axis=1)
+y = ds["fare_amount"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                    test_size=0.2,
+                                                    random_state=42)
+
+
+#STANDARISE FEATURES
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+
+#LINEAR REGRESSION
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+
+y_pred_lr = lr.predict(X_test)
+
+
+#Evaluation (Linear Regression)
+print("Linear Regression R²:", r2_score(y_test, y_pred_lr))
+print("Linear Regression RMSE:", np.sqrt(mean_squared_error(y_test, y_pred_lr)))
+
+
+#RANDOM FOREST REGRESSION
+rf = RandomForestRegressor()
+rf.fit(X_train, y_train)
+
+y_pred_rf = rf.predict(X_test)
+
+
+#Evaluation (Random Forest)
+print("Random Forest R²:", r2_score(y_test, y_pred_rf))
+print("Random Forest RMSE:", np.sqrt(mean_squared_error(y_test, y_pred_rf)))

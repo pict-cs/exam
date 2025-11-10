@@ -1,0 +1,55 @@
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix
+import pandas as pd
+
+
+# 1. Read data
+df = pd.read_csv("Churn_Modelling.csv")
+
+
+# Select features and target
+# Original numeric features + additional categorical features
+X = df[['CreditScore','Age','Tenure','Balance','NumOfProducts','EstimatedSalary','Geography','Gender']]
+y = df['Exited']
+
+
+# Convert categorical variables into numeric using one-hot encoding
+X = pd.get_dummies(X, drop_first=True)  # drop_first=True to avoid dummy variable trap
+
+
+# 3. Normalize
+sc = StandardScaler()
+X_scaled = sc.fit_transform(X)
+
+
+# 4. Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+
+# 5. Neural network (simple)
+mlp = MLPClassifier(hidden_layer_sizes=(16,8), activation='relu', max_iter=500)
+mlp.fit(X_train, y_train)
+
+
+# 6. Evaluate
+y_pred = mlp.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+
+# Compute confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+
+# Plot heatmap
+plt.figure(figsize=(6,4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix Heatmap")
+plt.show()

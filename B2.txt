@@ -1,0 +1,107 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
+import seaborn as sns
+
+
+# Load Dataset
+df = pd.read_csv("emails.csv")
+print("Shape:", df.shape)
+df.head()
+
+
+# Preprocessing
+# - Drop email number (not useful)
+# - Features = word counts
+# - Target = spam/ham label (0 = not spam, 1 = spam)
+
+# Drop first column (Email No.)
+df = df.drop(df.columns[0], axis=1)
+
+# Last column should be the label (check column name in dataset)
+print("Columns:", df.columns[:10], "...", df.columns[-5:])
+
+# Features and target
+X = df.iloc[:, :-1]   # all except last col
+y = df.iloc[:, -1]    # last col = label
+
+print("Feature shape:", X.shape, "Target shape:", y.shape)
+print(y.value_counts())
+
+
+# Train/Test Split and Scaling
+# Standardize features (important for KNN & SVM).
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+scaler = StandardScaler(with_mean=False)  # with_mean=False (since sparse matrix possible)
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled  = scaler.transform(X_test)
+
+
+# K-Nearest Neighbors Classifier
+knn = KNeighborsClassifier(n_neighbors=5)  # default k=5
+knn.fit(X_train_scaled, y_train)
+
+y_pred_knn = knn.predict(X_test_scaled)
+
+print("KNN Performance:")
+print("Accuracy:", accuracy_score(y_test, y_pred_knn))
+print("Precision:", precision_score(y_test, y_pred_knn))
+print("Recall:", recall_score(y_test, y_pred_knn))
+print("F1 Score:", f1_score(y_test, y_pred_knn))
+print("\nClassification Report:\n", classification_report(y_test, y_pred_knn))
+
+
+# Support Vector Machine Classifier
+svm = SVC(kernel="linear", random_state=42)
+svm.fit(X_train_scaled, y_train)
+
+y_pred_svm = svm.predict(X_test_scaled)
+
+print("SVM Performance:")
+print("Accuracy:", accuracy_score(y_test, y_pred_svm))
+print("Precision:", precision_score(y_test, y_pred_svm))
+print("Recall:", recall_score(y_test, y_pred_svm))
+print("F1 Score:", f1_score(y_test, y_pred_svm))
+print("\nClassification Report:\n", classification_report(y_test, y_pred_svm))
+
+
+# Confusion Matrices
+fig, axes = plt.subplots(1, 2, figsize=(10,4))
+
+cm_knn = confusion_matrix(y_test, y_pred_knn)
+cm_svm = confusion_matrix(y_test, y_pred_svm)
+
+sns.heatmap(cm_knn, annot=True, fmt="d", cmap="Blues", ax=axes[0])
+axes[0].set_title("KNN Confusion Matrix")
+axes[0].set_xlabel("Predicted")
+axes[0].set_ylabel("Actual")
+
+sns.heatmap(cm_svm, annot=True, fmt="d", cmap="Greens", ax=axes[1])
+axes[1].set_title("SVM Confusion Matrix")
+axes[1].set_xlabel("Predicted")
+axes[1].set_ylabel("Actual")
+
+plt.tight_layout()
+plt.show()
+
+
+# Model Comparison
+results = pd.DataFrame({
+    "Model": ["KNN", "SVM"],
+    "Accuracy": [accuracy_score(y_test, y_pred_knn), accuracy_score(y_test, y_pred_svm)],
+    "Precision": [precision_score(y_test, y_pred_knn), precision_score(y_test, y_pred_svm)],
+    "Recall": [recall_score(y_test, y_pred_knn), recall_score(y_test, y_pred_svm)],
+    "F1 Score": [f1_score(y_test, y_pred_knn), f1_score(y_test, y_pred_svm)]
+})
+
+results
