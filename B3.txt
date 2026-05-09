@@ -326,37 +326,3 @@ print("Predicted Class:", class_names[predicted_class])
 
 print("Prediction Probabilities:\n")
 print(prediction)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
