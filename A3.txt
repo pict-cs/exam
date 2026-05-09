@@ -1,0 +1,255 @@
+// Compile Command:
+// g++ -fopenmp A3.cpp -o A3
+
+// Run Command:
+// ./A3
+
+#include <bits/stdc++.h>
+#include <omp.h>
+
+using namespace std;
+using namespace chrono;
+
+// ---------------- PRINT ARRAY ----------------
+void printArray(vector<int>& arr)
+{
+    for (int x : arr)
+    {
+        cout << x << " ";
+    }
+
+    cout << endl;
+}
+
+// ---------------- GENERATE ARRAY ----------------
+void generateArray(vector<int>& arr, int n)
+{
+    arr.resize(n);
+
+    for (int i = 0; i < n; i++)
+    {
+        arr[i] = rand() % 1000;
+    }
+}
+
+// ---------------- MINIMUM ----------------
+void minimum(vector<int>& arr)
+{
+    // Sequential
+    int min_seq = INT_MAX;
+
+    auto start = high_resolution_clock::now();
+
+    for (int i = 0; i < arr.size(); i++)
+    {
+        if (arr[i] < min_seq)
+        {
+            min_seq = arr[i];
+        }
+    }
+
+    auto end = high_resolution_clock::now();
+
+    cout << "\nMinimum Element (Sequential): "
+         << min_seq << endl;
+
+    cout << "Time (Sequential): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
+    // Parallel
+    int min_par = INT_MAX;
+
+    start = high_resolution_clock::now();
+
+    #pragma omp parallel for reduction(min:min_par)
+    for (int i = 0; i < arr.size(); i++)
+    {
+        if (arr[i] < min_par)
+        {
+            min_par = arr[i];
+        }
+    }
+
+    end = high_resolution_clock::now();
+
+    cout << "Minimum Element (Parallel): "
+         << min_par << endl;
+
+    cout << "Time (Parallel): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+}
+
+// ---------------- MAXIMUM ----------------
+void maximum(vector<int>& arr)
+{
+    // Sequential
+    int max_seq = INT_MIN;
+
+    auto start = high_resolution_clock::now();
+
+    for (int i = 0; i < arr.size(); i++)
+    {
+        if (arr[i] > max_seq)
+        {
+            max_seq = arr[i];
+        }
+    }
+
+    auto end = high_resolution_clock::now();
+
+    cout << "\nMaximum Element (Sequential): "
+         << max_seq << endl;
+
+    cout << "Time (Sequential): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
+    // Parallel
+    int max_par = INT_MIN;
+
+    start = high_resolution_clock::now();
+
+    #pragma omp parallel for reduction(max:max_par)
+    for (int i = 0; i < arr.size(); i++)
+    {
+        if (arr[i] > max_par)
+        {
+            max_par = arr[i];
+        }
+    }
+
+    end = high_resolution_clock::now();
+
+    cout << "Maximum Element (Parallel): "
+         << max_par << endl;
+
+    cout << "Time (Parallel): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+}
+
+// ---------------- SUM ----------------
+void summation(vector<int>& arr)
+{
+    // Sequential
+    long long sum_seq = 0;
+
+    auto start = high_resolution_clock::now();
+
+    for (int i = 0; i < arr.size(); i++)
+    {
+        sum_seq += arr[i];
+    }
+
+    auto end = high_resolution_clock::now();
+
+    cout << "\nSum (Sequential): "
+         << sum_seq << endl;
+
+    cout << "Time (Sequential): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
+    // Parallel
+    long long sum_par = 0;
+
+    start = high_resolution_clock::now();
+
+    #pragma omp parallel for reduction(+:sum_par)
+    for (int i = 0; i < arr.size(); i++)
+    {
+        sum_par += arr[i];
+    }
+
+    end = high_resolution_clock::now();
+
+    cout << "Sum (Parallel): "
+         << sum_par << endl;
+
+    cout << "Time (Parallel): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+}
+
+// ---------------- AVERAGE ----------------
+void average(vector<int>& arr)
+{
+    // Sequential
+    double avg_seq = 0;
+
+    auto start = high_resolution_clock::now();
+
+    for (int i = 0; i < arr.size(); i++)
+    {
+        avg_seq += arr[i];
+    }
+
+    avg_seq /= arr.size();
+
+    auto end = high_resolution_clock::now();
+
+    cout << "\nAverage (Sequential): "
+         << avg_seq << endl;
+
+    cout << "Time (Sequential): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
+    // Parallel
+    double avg_par = 0;
+
+    start = high_resolution_clock::now();
+
+    #pragma omp parallel for reduction(+:avg_par)
+    for (int i = 0; i < arr.size(); i++)
+    {
+        avg_par += arr[i];
+    }
+
+    avg_par /= arr.size();
+
+    end = high_resolution_clock::now();
+
+    cout << "Average (Parallel): "
+         << avg_par << endl;
+
+    cout << "Time (Parallel): "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+}
+
+// ---------------- MAIN ----------------
+int main()
+{
+    srand(time(0));
+
+    int n;
+
+    cout << "Enter number of elements: ";
+    cin >> n;
+
+    vector<int> arr;
+
+    generateArray(arr, n);
+
+    omp_set_num_threads(4);
+
+    // Print small array only
+    if (n <= 20)
+    {
+        cout << "\nArray:\n";
+        printArray(arr);
+    }
+
+    minimum(arr);
+
+    maximum(arr);
+
+    summation(arr);
+
+    average(arr);
+
+    return 0;
+}

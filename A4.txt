@@ -1,0 +1,403 @@
+!nvidia-smi
+
+
+!nvcc --version
+
+
+%%writefile vector_add.cu
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <cuda.h>
+#include <time.h>
+
+/* ================= CUDA KERNEL ================= */
+__global__ void vectorAdd(int *A, int *B, int *C, int N)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < N)
+    {
+        C[i] = A[i] + B[i];
+    }
+}
+
+/* ================= PRINT VECTOR ================= */
+void printVector(int *arr, int N)
+{
+    for (int i = 0; i < N; i++)
+    {
+        printf("%d ", arr[i]);
+    }
+
+    printf("\n");
+}
+
+/* ================= MAIN ================= */
+int main()
+{
+    int N;
+
+    printf("Enter vector size: ");
+    scanf("%d", &N);
+
+    size_t size = N * sizeof(int);
+
+    // Host Memory
+    int *h_A = (int*)malloc(size);
+    int *h_B = (int*)malloc(size);
+    int *h_C_gpu = (int*)malloc(size);
+    int *h_C_cpu = (int*)malloc(size);
+
+    // Initialize vectors
+    for (int i = 0; i < N; i++)
+    {
+        h_A[i] = i + 1;
+        h_B[i] = (i + 1) * 2;
+    }
+
+    // Print small vectors only
+    if (N <= 20)
+    {
+        printf("\nVector A:\n");
+        printVector(h_A, N);
+
+        printf("\nVector B:\n");
+        printVector(h_B, N);
+    }
+
+    /* ========== SEQUENTIAL CPU EXECUTION ========== */
+
+    clock_t start_cpu = clock();
+
+    for (int i = 0; i < N; i++)
+    {
+        h_C_cpu[i] = h_A[i] + h_B[i];
+    }
+
+    clock_t end_cpu = clock();
+
+    double cpu_time =
+        (double)(end_cpu - start_cpu) / CLOCKS_PER_SEC;
+
+    /* ========== GPU EXECUTION ========== */
+
+    int *d_A, *d_B, *d_C;
+
+    cudaMalloc(&d_A, size);
+    cudaMalloc(&d_B, size);
+    cudaMalloc(&d_C, size);
+
+    cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
+
+    int threads = 256;
+
+    int blocks = (N + threads - 1) / threads;
+
+    cudaEvent_t start, stop;
+
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cudaEventRecord(start);
+
+    vectorAdd<<<blocks, threads>>>(d_A, d_B, d_C, N);
+
+    cudaDeviceSynchronize();
+
+    cudaEventRecord(stop);
+
+    cudaEventSynchronize(stop);
+
+    float gpu_time;
+
+    cudaEventElapsedTime(&gpu_time, start, stop);
+
+    cudaMemcpy(h_C_gpu, d_C, size,
+               cudaMemcpyDeviceToHost);
+
+    /* ========== OUTPUT ========== */
+
+    printf("\n===== PERFORMANCE COMPARISON =====\n");
+
+    printf("Sequential CPU Time = %f sec\n",
+           cpu_time);
+
+    printf("Parallel GPU Time = %f ms\n",
+           gpu_time);
+
+    double gpu_sec = gpu_time / 1000.0;
+
+    printf("Speedup = %f\n",
+           cpu_time / gpu_sec);
+
+    // Print result for small vectors
+    if (N <= 20)
+    {
+        printf("\nResult Vector:\n");
+
+        printVector(h_C_gpu, N);
+    }
+
+    // Print sample output for large vectors
+    else
+    {
+        printf("\nSample Output:\n");
+
+        printf("C[0] = %d\n", h_C_gpu[0]);
+
+        printf("C[N-1] = %d\n", h_C_gpu[N - 1]);
+    }
+
+    /* ========== VERIFICATION ========== */
+
+    int success = 1;
+
+    for (int i = 0; i < N; i++)
+    {
+        if (h_C_cpu[i] != h_C_gpu[i])
+        {
+            success = 0;
+            break;
+        }
+    }
+
+    printf("\nVerification: %s\n",
+           success ? "SUCCESS" : "FAILED");
+
+    /* ========== CLEANUP ========== */
+
+    free(h_A);
+    free(h_B);
+    free(h_C_cpu);
+    free(h_C_gpu);
+
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+
+    return 0;
+}
+
+
+!nvcc vector_add.cu -o vec_add
+
+
+!./vec_add
+
+
+%%writefile matrix_mul.cu
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <cuda.h>
+#include <time.h>
+
+/* ================= CUDA KERNEL ================= */
+__global__ void matrixMul(int *A, int *B, int *C, int N)
+{
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row < N && col < N)
+    {
+        int sum = 0;
+
+        for (int k = 0; k < N; k++)
+        {
+            sum += A[row * N + k] *
+                   B[k * N + col];
+        }
+
+        C[row * N + col] = sum;
+    }
+}
+
+/* ================= PRINT MATRIX ================= */
+void printMatrix(int *matrix, int N)
+{
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            printf("%d ", matrix[i * N + j]);
+        }
+
+        printf("\n");
+    }
+}
+
+/* ================= MAIN ================= */
+int main()
+{
+    int N;
+
+    printf("Enter matrix dimension (N x N): ");
+
+    scanf("%d", &N);
+
+    int size = N * N * sizeof(int);
+
+    // Host Memory
+    int *h_A = (int*)malloc(size);
+    int *h_B = (int*)malloc(size);
+    int *h_C_gpu = (int*)malloc(size);
+    int *h_C_cpu = (int*)malloc(size);
+
+    // Initialize matrices
+    for (int i = 0; i < N * N; i++)
+    {
+        h_A[i] = rand() % 10;
+        h_B[i] = rand() % 10;
+    }
+
+    // Print small matrices only
+    if (N <= 5)
+    {
+        printf("\nMatrix A:\n");
+
+        printMatrix(h_A, N);
+
+        printf("\nMatrix B:\n");
+
+        printMatrix(h_B, N);
+    }
+
+    /* ========== SEQUENTIAL CPU EXECUTION ========== */
+
+    clock_t start_cpu = clock();
+
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            int sum = 0;
+
+            for (int k = 0; k < N; k++)
+            {
+                sum += h_A[i * N + k] *
+                       h_B[k * N + j];
+            }
+
+            h_C_cpu[i * N + j] = sum;
+        }
+    }
+
+    clock_t end_cpu = clock();
+
+    double cpu_time =
+        (double)(end_cpu - start_cpu) / CLOCKS_PER_SEC;
+
+    /* ========== GPU EXECUTION ========== */
+
+    int *d_A, *d_B, *d_C;
+
+    cudaMalloc(&d_A, size);
+    cudaMalloc(&d_B, size);
+    cudaMalloc(&d_C, size);
+
+    cudaMemcpy(d_A, h_A, size,
+               cudaMemcpyHostToDevice);
+
+    cudaMemcpy(d_B, h_B, size,
+               cudaMemcpyHostToDevice);
+
+    dim3 threads(16, 16);
+
+    dim3 blocks((N + 15) / 16,
+                (N + 15) / 16);
+
+    cudaEvent_t start, stop;
+
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cudaEventRecord(start);
+
+    matrixMul<<<blocks, threads>>>(d_A, d_B, d_C, N);
+
+    cudaDeviceSynchronize();
+
+    cudaEventRecord(stop);
+
+    cudaEventSynchronize(stop);
+
+    float gpu_time;
+
+    cudaEventElapsedTime(&gpu_time, start, stop);
+
+    cudaMemcpy(h_C_gpu, d_C, size,
+               cudaMemcpyDeviceToHost);
+
+    /* ========== OUTPUT ========== */
+
+    printf("\n===== PERFORMANCE COMPARISON =====\n");
+
+    printf("Sequential CPU Time = %f sec\n",
+           cpu_time);
+
+    printf("Parallel GPU Time = %f ms\n",
+           gpu_time);
+
+    double gpu_sec = gpu_time / 1000.0;
+
+    printf("Speedup = %f\n",
+           cpu_time / gpu_sec);
+
+    // Print result matrix for small input
+    if (N <= 5)
+    {
+        printf("\nResult Matrix:\n");
+
+        printMatrix(h_C_gpu, N);
+    }
+
+    // Sample output for large matrices
+    else
+    {
+        printf("\nSample Output:\n");
+
+        printf("C[0][0] = %d\n",
+               h_C_gpu[0]);
+
+        printf("C[N-1][N-1] = %d\n",
+               h_C_gpu[N * N - 1]);
+    }
+
+    /* ========== VERIFICATION ========== */
+
+    int success = 1;
+
+    for (int i = 0; i < N * N; i++)
+    {
+        if (h_C_cpu[i] != h_C_gpu[i])
+        {
+            success = 0;
+            break;
+        }
+    }
+
+    printf("\nVerification: %s\n",
+           success ? "SUCCESS" : "FAILED");
+
+    /* ========== CLEANUP ========== */
+
+    free(h_A);
+    free(h_B);
+    free(h_C_cpu);
+    free(h_C_gpu);
+
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+
+    return 0;
+}
+
+
+!nvcc matrix_mul.cu -o mat_mul
+
+
+!./mat_mul
