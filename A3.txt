@@ -225,31 +225,56 @@ int main()
 {
     srand(time(0));
 
-    int n;
+    int choice;
 
-    cout << "Enter number of elements: ";
-    cin >> n;
-
-    vector<int> arr;
-
-    generateArray(arr, n);
-
-    omp_set_num_threads(4);
-
-    // Print small array only
-    if (n <= 20)
+    while (true)
     {
-        cout << "\nArray:\n";
-        printArray(arr);
+        cout << "\n1. Run Program\n";
+        cout << "2. Exit\n";
+
+        cout << "\nEnter choice: ";
+        cin >> choice;
+
+        if (choice == 2)
+        {
+            cout << "\nExiting Program\n";
+            break;
+        }
+
+        else if (choice == 1)
+        {
+            int n;
+
+            cout << "Enter number of elements: ";
+            cin >> n;
+
+            vector<int> arr;
+
+            generateArray(arr, n);
+
+            omp_set_num_threads(4);
+
+            // Print small array only
+            if (n <= 20)
+            {
+                cout << "\nArray:\n";
+                printArray(arr);
+            }
+
+            minimum(arr);
+
+            maximum(arr);
+
+            summation(arr);
+
+            average(arr);
+        }
+
+        else
+        {
+            cout << "\nInvalid Choice\n";
+        }
     }
-
-    minimum(arr);
-
-    maximum(arr);
-
-    summation(arr);
-
-    average(arr);
 
     return 0;
 }
