@@ -1,7 +1,9 @@
 !nvidia-smi
 
 
+
 !nvcc --version
+
 
 
 %%writefile vector_add.cu
@@ -181,10 +183,13 @@ int main()
 }
 
 
+
 !nvcc vector_add.cu -o vec_add
 
 
+
 !./vec_add
+
 
 
 %%writefile matrix_mul.cu
@@ -397,7 +402,9 @@ int main()
 }
 
 
+
 !nvcc matrix_mul.cu -o mat_mul
+
 
 
 !./mat_mul
