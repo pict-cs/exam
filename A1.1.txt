@@ -283,11 +283,20 @@ int main()
 {
     int choice;
 
-    cout << "1. Manual Graph Input\n";
+while (true)
+{
+    cout << "\n1. Manual Graph Input\n";
     cout << "2. Random Graph Generation\n";
+    cout << "3. Exit\n";
 
     cout << "\nEnter choice: ";
     cin >> choice;
+
+    if (choice == 3)
+    {
+        cout << "\nExiting Program\n";
+        break;
+    }
 
     int V, E;
 
@@ -431,7 +440,7 @@ int main()
     {
         cout << "\nInvalid Choice\n";
     }
-
+}
     return 0;
 }
 
