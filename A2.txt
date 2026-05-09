@@ -191,66 +191,91 @@ int main()
 {
     srand(time(0));
 
-    int size;
+    int choice;
 
-    cout << "Enter size of array: ";
-    cin >> size;
-
-    vector<int> original;
-
-    generateArray(original, size);
-
-    vector<int> arr1 = original;
-    vector<int> arr2 = original;
-    vector<int> arr3 = original;
-    vector<int> arr4 = original;
-
-    omp_set_num_threads(4);
-
-    // Small array -> print
-    if (size <= 20)
+    while (true)
     {
-        cout << "\nOriginal Array:\n";
-        printArray(original);
-    }
+        cout << "\n1. Run Sorting Program\n";
+        cout << "2. Exit\n";
 
-    // ---------------- Sequential Bubble Sort ----------------
-    sequentialBubbleSort(arr1);
+        cout << "\nEnter choice: ";
+        cin >> choice;
 
-    // ---------------- Parallel Bubble Sort ----------------
-    parallelBubbleSort(arr2);
+        if (choice == 2)
+        {
+            cout << "\nExiting Program\n";
+            break;
+        }
 
-    // ---------------- Sequential Merge Sort ----------------
-    auto start = high_resolution_clock::now();
+        else if (choice == 1)
+        {
+            int size;
 
-    sequentialMergeSort(arr3, 0, size - 1);
+            cout << "Enter size of array: ";
+            cin >> size;
 
-    auto end = high_resolution_clock::now();
+            vector<int> original;
 
-    cout << "Sequential Merge Sort Time: "
-         << duration_cast<microseconds>(end - start).count()
-         << " microseconds\n";
+            generateArray(original, size);
 
-    // ---------------- Parallel Merge Sort ----------------
-    start = high_resolution_clock::now();
+            vector<int> arr1 = original;
+            vector<int> arr2 = original;
+            vector<int> arr3 = original;
+            vector<int> arr4 = original;
 
-    #pragma omp parallel
-    {
-        #pragma omp single
-        parallelMergeSort(arr4, 0, size - 1);
-    }
+            omp_set_num_threads(4);
 
-    end = high_resolution_clock::now();
+            // Small array -> print
+            if (size <= 20)
+            {
+                cout << "\nOriginal Array:\n";
+                printArray(original);
+            }
 
-    cout << "Parallel Merge Sort Time: "
-         << duration_cast<microseconds>(end - start).count()
-         << " microseconds\n";
+            // ---------------- Sequential Bubble Sort ----------------
+            sequentialBubbleSort(arr1);
 
-    // Optional sorted array printing
-    if (size <= 20)
-    {
-        cout << "\nSorted Array:\n";
-        printArray(arr4);
+            // ---------------- Parallel Bubble Sort ----------------
+            parallelBubbleSort(arr2);
+
+            // ---------------- Sequential Merge Sort ----------------
+            auto start = high_resolution_clock::now();
+
+            sequentialMergeSort(arr3, 0, size - 1);
+
+            auto end = high_resolution_clock::now();
+
+            cout << "Sequential Merge Sort Time: "
+                 << duration_cast<microseconds>(end - start).count()
+                 << " microseconds\n";
+
+            // ---------------- Parallel Merge Sort ----------------
+            start = high_resolution_clock::now();
+
+            #pragma omp parallel
+            {
+                #pragma omp single
+                parallelMergeSort(arr4, 0, size - 1);
+            }
+
+            end = high_resolution_clock::now();
+
+            cout << "Parallel Merge Sort Time: "
+                 << duration_cast<microseconds>(end - start).count()
+                 << " microseconds\n";
+
+            // Optional sorted array printing
+            if (size <= 20)
+            {
+                cout << "\nSorted Array:\n";
+                printArray(arr4);
+            }
+        }
+
+        else
+        {
+            cout << "\nInvalid Choice\n";
+        }
     }
 
     return 0;
