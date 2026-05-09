@@ -1,0 +1,318 @@
+# Step 1: Import required libraries
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+
+
+# Step 2: Load IMDB dataset
+
+df = pd.read_csv("IMDB Dataset.csv")
+
+# Display first 5 rows
+df.head()
+
+
+
+# Step 3: Dataset information
+
+print("Dataset Shape:")
+print(df.shape)
+
+
+print("\nColumn Names:")
+print(df.columns)
+
+
+
+print("\nDataset Info:")
+print(df.info())
+
+
+
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+
+
+
+# Step 4: Check class distribution
+
+sns.countplot(x=df['sentiment'])
+plt.title("Sentiment Distribution")
+plt.show()
+
+print(df['sentiment'].value_counts())
+
+
+
+
+
+# Step 5: Convert sentiment labels into numeric values
+
+# positive -> 1
+# negative -> 0
+
+encoder = LabelEncoder()
+
+df['sentiment'] = encoder.fit_transform(df['sentiment'])
+
+df.head()
+
+
+
+
+
+# Step 6: Define input feature and target variable
+
+X = df['review']
+y = df['sentiment']
+
+
+
+
+# Step 7: Split dataset into training and testing
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+print("Training Samples:", len(X_train))
+print("Testing Samples:", len(X_test))
+
+
+
+
+# Step 8: Convert text into numerical tokens
+
+max_words = 10000
+
+tokenizer = Tokenizer(num_words=max_words)
+
+tokenizer.fit_on_texts(X_train)
+
+X_train_seq = tokenizer.texts_to_sequences(X_train)
+X_test_seq = tokenizer.texts_to_sequences(X_test)
+
+
+
+# Step 9: Make all sequences equal length using padding
+
+max_length = 200
+
+X_train_pad = pad_sequences(
+    X_train_seq,
+    maxlen=max_length,
+    padding='post'
+)
+
+X_test_pad = pad_sequences(
+    X_test_seq,
+    maxlen=max_length,
+    padding='post'
+)
+
+print("Shape after padding:")
+print(X_train_pad.shape)
+print(X_test_pad.shape)
+
+
+
+
+# Step 10: Build Deep Neural Network model
+
+model = keras.Sequential([
+
+    keras.layers.Input(shape=(max_length,)),
+
+    # Embedding Layer
+    keras.layers.Embedding(
+        input_dim=max_words,
+        output_dim=128
+    ),
+
+    # Flatten Layer
+    keras.layers.Flatten(),
+
+    # Hidden Layer 1
+    keras.layers.Dense(64, activation='relu'),
+
+    # Hidden Layer 2
+    keras.layers.Dense(32, activation='relu'),
+
+    # Output Layer
+    keras.layers.Dense(1, activation='sigmoid')
+
+])
+
+
+
+
+# Step 11: Compile the model
+
+model.compile(
+    optimizer='adam',
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+model.summary()
+
+
+
+
+# Step 12: Train the model
+
+history = model.fit(
+
+    X_train_pad,
+    y_train,
+
+    epochs=5,
+    batch_size=32,
+
+    validation_split=0.2,
+
+    verbose=1
+)
+
+
+
+# Step 13: Plot training and validation accuracy
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.title("Training vs Validation Accuracy")
+
+plt.legend()
+plt.show()
+
+
+
+
+
+# Step 14: Plot training and validation loss
+
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.title("Training vs Validation Loss")
+
+plt.legend()
+plt.show()
+
+
+
+
+
+# Step 15: Evaluate model performance
+
+loss, accuracy = model.evaluate(X_test_pad, y_test)
+
+print("Test Loss:", loss)
+print("Test Accuracy:", accuracy)
+
+
+
+
+# Step 16: Predict sentiments
+
+predictions = model.predict(X_test_pad)
+
+# Convert probabilities into 0 or 1
+
+pred_labels = (predictions > 0.5).astype("int32")
+
+
+
+
+# Step 17: Classification report
+
+print(classification_report(y_test, pred_labels))
+
+
+
+
+# Step 18: Confusion matrix
+
+cm = confusion_matrix(y_test, pred_labels)
+
+plt.figure(figsize=(6,4))
+
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+
+plt.title("Confusion Matrix")
+
+plt.show()
+
+
+
+
+# Step 19: Predict custom review sentiment
+
+sample_review = "This movie was absolutely fantastic and amazing"
+
+#confusing eg - Although the movie started slowly, the performances and emotional ending made it worth watching
+
+# Convert text into sequence
+sample_seq = tokenizer.texts_to_sequences([sample_review])
+
+# Padding
+sample_pad = pad_sequences(sample_seq, maxlen=max_length, padding='post')
+
+
+# Prediction
+prediction = model.predict(sample_pad)
+
+print("Prediction Score:", prediction[0][0])
+
+if prediction[0][0] > 0.5:
+    print("Positive Review")
+else:
+    print("Negative Review")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

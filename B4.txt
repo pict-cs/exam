@@ -1,0 +1,528 @@
+# Step 1: Import required libraries
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as snsa
+
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error
+
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import (
+    Dense,
+    Dropout,
+    LSTM,
+    SimpleRNN
+)
+
+
+
+# Step 2: Load Google stock dataset
+
+df = pd.read_csv("goog.csv")
+
+# Display first 5 rows
+df.head()
+
+
+
+
+# Step 4: Visualize Google stock closing prices
+
+plt.figure(figsize=(12,6))
+
+plt.plot(df['Close'])
+
+plt.title("Google Stock Closing Price")
+
+plt.xlabel("Time")
+plt.ylabel("Stock Price")
+
+plt.show()
+
+
+
+
+# Step 5: Select closing price column
+
+data = df[['Close']]
+
+data.head()
+
+
+
+
+# Step 6: Normalize data using MinMaxScaler
+
+scaler = MinMaxScaler(feature_range=(0,1))
+
+scaled_data = scaler.fit_transform(data)
+
+print(scaled_data[:5])
+
+
+
+
+# Step 7: Create sequences for time series prediction
+
+X = []
+y = []
+
+time_step = 5
+
+for i in range(time_step, len(scaled_data)):
+
+    X.append(scaled_data[i-time_step:i, 0])
+
+    y.append(scaled_data[i, 0])
+
+X = np.array(X)
+y = np.array(y)
+
+print("X Shape:", X.shape)
+print("y Shape:", y.shape)
+
+
+
+
+# Step 8: Reshape into 3D format
+
+X = np.reshape(X, (X.shape[0], X.shape[1], 1))
+
+print("Reshaped X Shape:", X.shape)
+
+
+
+
+# Step 9: Split dataset into training and testing
+
+split = int(0.8 * len(X))
+
+X_train = X[:split]
+X_test = X[split:]
+
+y_train = y[:split]
+y_test = y[split:]
+
+print("Training Samples:", len(X_train))
+print("Testing Samples:", len(X_test))
+
+
+
+
+# Step 10: Build Simple RNN model
+
+rnn_model = Sequential([
+
+    keras.layers.Input(shape=(X_train.shape[1],1)),
+
+    # First RNN Layer
+    SimpleRNN(
+        units=50,
+        return_sequences=True
+    ),
+
+    # Dropout Layer
+    Dropout(0.2),
+
+    # Second RNN Layer
+    SimpleRNN(
+        units=50,
+        return_sequences=False
+    ),
+
+    # Dropout Layer
+    Dropout(0.2),
+
+    # Dense Layer
+    Dense(25),
+
+    # Output Layer
+    Dense(1)
+
+])
+
+
+
+# Step 11: Compile Simple RNN model
+
+rnn_model.compile(
+
+    optimizer='adam',
+
+    loss='mean_squared_error'
+
+)
+
+rnn_model.summary()
+
+
+
+# Step 12: Train Simple RNN model
+
+rnn_history = rnn_model.fit(
+
+    X_train,
+    y_train,
+
+    epochs=20,
+
+    batch_size=32,
+
+    validation_split=0.1,
+
+    verbose=1
+)
+
+
+
+# Step 13: Plot Simple RNN training loss
+
+plt.figure(figsize=(10,5))
+
+plt.plot(rnn_history.history['loss'], label='Training Loss')
+
+plt.plot(rnn_history.history['val_loss'], label='Validation Loss')
+
+plt.title("Simple RNN Loss")
+
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+
+plt.legend()
+
+plt.show()
+
+
+
+
+# Step 14: Predict stock prices using Simple RNN
+
+rnn_predictions = rnn_model.predict(X_test)
+
+# Convert back to original values
+
+rnn_predictions = scaler.inverse_transform(
+    rnn_predictions.reshape(-1,1)
+)
+
+y_test_actual = scaler.inverse_transform(
+    y_test.reshape(-1,1)
+)
+
+
+
+
+# Step 15: Evaluate Simple RNN model
+
+rnn_rmse = np.sqrt(
+    mean_squared_error(y_test_actual, rnn_predictions)
+)
+
+print("Simple RNN RMSE:", rnn_rmse)
+
+
+
+
+# Step 16: Plot actual vs predicted prices (Simple RNN)
+
+plt.figure(figsize=(14,6))
+
+plt.plot(
+    y_test_actual,
+    color='blue',
+    label='Actual Google Stock Price'
+)
+
+plt.plot(
+    rnn_predictions,
+    color='red',
+    label='Predicted Price (RNN)'
+)
+
+plt.title("Google Stock Price Prediction using Simple RNN")
+
+plt.xlabel("Time")
+plt.ylabel("Stock Price")
+
+plt.legend()
+
+plt.show()
+
+
+
+
+# Step 17: Build LSTM model
+
+lstm_model = Sequential([
+
+    keras.layers.Input(shape=(X_train.shape[1],1)),
+
+    # First LSTM Layer
+    LSTM(
+        units=50,
+        return_sequences=True
+    ),
+
+    # Dropout Layer
+    Dropout(0.2),
+
+    # Second LSTM Layer
+    LSTM(
+        units=50,
+        return_sequences=False
+    ),
+
+    # Dropout Layer
+    Dropout(0.2),
+
+    # Dense Layer
+    Dense(25),
+
+    # Output Layer
+    Dense(1)
+
+])
+
+
+
+
+
+# Step 18: Compile LSTM model
+
+lstm_model.compile(
+
+    optimizer='adam',
+
+    loss='mean_squared_error'
+
+)
+
+lstm_model.summary()
+
+
+
+
+# Step 19: Train LSTM model
+
+lstm_history = lstm_model.fit(
+
+    X_train,
+    y_train,
+
+    epochs=20,
+
+    batch_size=32,
+
+    validation_split=0.1,
+
+    verbose=1
+)
+
+
+
+
+# Step 20: Plot LSTM training loss
+
+plt.figure(figsize=(10,5))
+
+plt.plot(lstm_history.history['loss'], label='Training Loss')
+
+plt.plot(lstm_history.history['val_loss'], label='Validation Loss')
+
+plt.title("LSTM Loss")
+
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+
+plt.legend()
+
+plt.show()
+
+
+
+# Step 21: Predict stock prices using LSTM
+
+lstm_predictions = lstm_model.predict(X_test)
+
+# Convert back to original values
+
+lstm_predictions = scaler.inverse_transform(
+    lstm_predictions.reshape(-1,1)
+)
+
+
+
+# Step 22: Evaluate LSTM model
+
+lstm_rmse = np.sqrt(
+    mean_squared_error(y_test_actual, lstm_predictions)
+)
+
+print("LSTM RMSE:", lstm_rmse)
+
+
+
+
+# Step 23: Plot actual vs predicted prices (LSTM)
+
+plt.figure(figsize=(14,6))
+
+plt.plot(
+    y_test_actual,
+    color='blue',
+    label='Actual Google Stock Price'
+)
+
+plt.plot(
+    lstm_predictions,
+    color='green',
+    label='Predicted Price (LSTM)'
+)
+
+plt.title("Google Stock Price Prediction using LSTM")
+
+plt.xlabel("Time")
+plt.ylabel("Stock Price")
+
+plt.legend()
+
+plt.show()
+
+
+
+
+# Step 24: Compare RMSE values
+
+print("Simple RNN RMSE :", rnn_rmse)
+
+print("LSTM RMSE       :", lstm_rmse)
+
+if lstm_rmse < rnn_rmse:
+    print("\nLSTM performed better than Simple RNN")
+else:
+    print("\nSimple RNN performed better")
+
+
+
+
+# Step 25: Predict next day stock price using LSTM
+
+last_60_days = scaled_data[-60:]
+
+X_future = []
+
+X_future.append(last_60_days[:,0])
+
+X_future = np.array(X_future)
+
+X_future = np.reshape(
+    X_future,
+    (X_future.shape[0], X_future.shape[1], 1)
+)
+
+future_price = lstm_model.predict(X_future)
+
+future_price = scaler.inverse_transform(future_price)
+
+print("Predicted Next Day Stock Price:", future_price[0][0])
+
+
+
+
+# Step 26: Display sample predictions
+
+for i in range(5):
+
+    print(
+        f"Actual Price: {y_test_actual[i][0]:.2f} | "
+        f"RNN Prediction: {rnn_predictions[i][0]:.2f} | "
+        f"LSTM Prediction: {lstm_predictions[i][0]:.2f}"
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
