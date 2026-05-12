@@ -1,11 +1,5 @@
 // Compile Command:
-// g++ -fopenmp A1.1.cpp -o A1.1
-
-// Run Command:
-// ./A1.1
-
-// Both cases- Manual and Random graph generation
-// Random generation for large graphs, to show parallel time is less than sequential
+// g++ test.cpp -fopenmp -o test.exe
 
 #include <iostream>
 #include <vector>
@@ -33,14 +27,14 @@ public:
         adj.resize(V);
     }
 
-    // Add edge
+    // Add Edge
     void addEdge(int u, int v)
     {
         adj[u].push_back(v);
-        adj[v].push_back(u); // Undirected Graph
+        adj[v].push_back(u);
     }
 
-    // Print graph
+    // Print Graph
     void printGraph()
     {
         cout << "\nAdjacency List:\n";
@@ -58,7 +52,7 @@ public:
         }
     }
 
-    // Random graph generation
+    // Random Graph Generation
     void generateRandomGraph(int edges)
     {
         srand(time(0));
@@ -113,56 +107,48 @@ public:
     // ---------------- PARALLEL BFS ----------------
     void parallelBFS(int start, bool printTraversal)
     {
-        vector<bool> visited(V, false);
+        vector<int> visited(V, 0);
 
-        queue<int> q;
+        vector<int> current;
+        current.push_back(start);
 
-        visited[start] = true;
-        q.push(start);
+        visited[start] = 1;
 
         if (printTraversal)
             cout << "\nParallel BFS Traversal: ";
 
-        while (!q.empty())
+        while (!current.empty())
         {
-            int current;
-
-            #pragma omp critical
-            {
-                if (!q.empty())
-                {
-                    current = q.front();
-                    q.pop();
-
-                    if (printTraversal)
-                        cout << current << " ";
-                }
-            }
+            vector<int> next;
 
             #pragma omp parallel for
-            for (int i = 0; i < adj[current].size(); i++)
+            for (int i = 0; i < current.size(); i++)
             {
-                int neighbor = adj[current][i];
+                int node = current[i];
 
-                bool shouldPush = false;
+                if (printTraversal)
+                {
+                    #pragma omp critical
+                    cout << node << " ";
+                }
 
-                #pragma omp critical
+                for (int neighbor : adj[node])
                 {
                     if (!visited[neighbor])
                     {
-                        visited[neighbor] = true;
-                        shouldPush = true;
-                    }
-                }
-
-                if (shouldPush)
-                {
-                    #pragma omp critical
-                    {
-                        q.push(neighbor);
+                        #pragma omp critical
+                        {
+                            if (!visited[neighbor])
+                            {
+                                visited[neighbor] = 1;
+                                next.push_back(neighbor);
+                            }
+                        }
                     }
                 }
             }
+
+            current = next;
         }
 
         if (printTraversal)
@@ -225,45 +211,23 @@ public:
 
             #pragma omp critical
             {
-                if (!s.empty())
-                {
-                    current = s.top();
-                    s.pop();
-                }
+                current = s.top();
+                s.pop();
             }
 
-            bool processNode = false;
-
-            #pragma omp critical
+            if (!visited[current])
             {
-                if (!visited[current])
-                {
-                    visited[current] = true;
-                    processNode = true;
+                visited[current] = true;
 
-                    if (printTraversal)
-                        cout << current << " ";
-                }
-            }
+                if (printTraversal)
+                    cout << current << " ";
 
-            if (processNode)
-            {
                 #pragma omp parallel for
                 for (int i = 0; i < adj[current].size(); i++)
                 {
                     int neighbor = adj[current][i];
 
-                    bool shouldPush = false;
-
-                    #pragma omp critical
-                    {
-                        if (!visited[neighbor])
-                        {
-                            shouldPush = true;
-                        }
-                    }
-
-                    if (shouldPush)
+                    if (!visited[neighbor])
                     {
                         #pragma omp critical
                         {
@@ -283,167 +247,167 @@ int main()
 {
     int choice;
 
-while (true)
-{
-    cout << "\n1. Manual Graph Input\n";
-    cout << "2. Random Graph Generation\n";
-    cout << "3. Exit\n";
-
-    cout << "\nEnter choice: ";
-    cin >> choice;
-
-    if (choice == 3)
+    while (true)
     {
-        cout << "\nExiting Program\n";
-        break;
-    }
+        cout << "\n1. Manual Graph Input\n";
+        cout << "2. Random Graph Generation\n";
+        cout << "3. Exit\n";
 
-    int V, E;
+        cout << "\nEnter choice: ";
+        cin >> choice;
 
-    Graph *g;
-
-    if (choice == 1)
-    {
-        cout << "\nEnter number of vertices: ";
-        cin >> V;
-
-        g = new Graph(V);
-
-        cout << "Enter number of edges: ";
-        cin >> E;
-
-        cout << "Enter edges (u v):\n";
-
-        for (int i = 0; i < E; i++)
+        if (choice == 3)
         {
-            int u, v;
-            cin >> u >> v;
-
-            g->addEdge(u, v);
+            cout << "\nExiting Program...\n";
+            break;
         }
 
-        int start;
+        int V, E;
 
-        cout << "Enter starting vertex: ";
-        cin >> start;
+        Graph *g;
 
-        g->printGraph();
+        if (choice == 1)
+        {
+            cout << "\nEnter number of vertices: ";
+            cin >> V;
 
-        // Sequential BFS
-        auto start_time = high_resolution_clock::now();
+            g = new Graph(V);
 
-        g->sequentialBFS(start, true);
+            cout << "Enter number of edges: ";
+            cin >> E;
 
-        auto end_time = high_resolution_clock::now();
+            cout << "Enter edges (u v):\n";
 
-        cout << "Sequential BFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
+            for (int i = 0; i < E; i++)
+            {
+                int u, v;
+                cin >> u >> v;
 
-        // Parallel BFS
-        start_time = high_resolution_clock::now();
+                g->addEdge(u, v);
+            }
 
-        g->parallelBFS(start, true);
+            int start;
 
-        end_time = high_resolution_clock::now();
+            cout << "Enter starting vertex: ";
+            cin >> start;
 
-        cout << "Parallel BFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
+            g->printGraph();
 
-        // Sequential DFS
-        start_time = high_resolution_clock::now();
+            // Sequential BFS
+            auto start_time = high_resolution_clock::now();
 
-        g->sequentialDFS(start, true);
+            g->sequentialBFS(start, true);
 
-        end_time = high_resolution_clock::now();
+            auto end_time = high_resolution_clock::now();
 
-        cout << "Sequential DFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
+            cout << "Sequential BFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
 
-        // Parallel DFS
-        start_time = high_resolution_clock::now();
+            // Parallel BFS
+            start_time = high_resolution_clock::now();
 
-        g->parallelDFS(start, true);
+            g->parallelBFS(start, true);
 
-        end_time = high_resolution_clock::now();
+            end_time = high_resolution_clock::now();
 
-        cout << "Parallel DFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
+            cout << "Parallel BFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
+
+            // Sequential DFS
+            start_time = high_resolution_clock::now();
+
+            g->sequentialDFS(start, true);
+
+            end_time = high_resolution_clock::now();
+
+            cout << "Sequential DFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
+
+            // Parallel DFS
+            start_time = high_resolution_clock::now();
+
+            g->parallelDFS(start, true);
+
+            end_time = high_resolution_clock::now();
+
+            cout << "Parallel DFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
+        }
+
+        else if (choice == 2)
+        {
+            cout << "\nEnter number of vertices: ";
+            cin >> V;
+
+            cout << "Enter number of edges: ";
+            cin >> E;
+
+            g = new Graph(V);
+
+            g->generateRandomGraph(E);
+
+            int start = 0;
+
+            cout << "\nLarge random graph generated successfully.\n";
+            cout << "Traversal output hidden for large graph.\n";
+
+            // Sequential BFS
+            auto start_time = high_resolution_clock::now();
+
+            g->sequentialBFS(start, false);
+
+            auto end_time = high_resolution_clock::now();
+
+            cout << "\nSequential BFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
+
+            // Parallel BFS
+            start_time = high_resolution_clock::now();
+
+            g->parallelBFS(start, false);
+
+            end_time = high_resolution_clock::now();
+
+            cout << "Parallel BFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
+
+            // Sequential DFS
+            start_time = high_resolution_clock::now();
+
+            g->sequentialDFS(start, false);
+
+            end_time = high_resolution_clock::now();
+
+            cout << "Sequential DFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
+
+            // Parallel DFS
+            start_time = high_resolution_clock::now();
+
+            g->parallelDFS(start, false);
+
+            end_time = high_resolution_clock::now();
+
+            cout << "Parallel DFS Time: "
+                 << duration_cast<microseconds>(end_time - start_time).count()
+                 << " microseconds\n";
+        }
+
+        else
+        {
+            cout << "\nInvalid Choice\n";
+        }
     }
 
-    else if (choice == 2)
-    {
-        cout << "\nEnter number of vertices: ";
-        cin >> V;
-
-        cout << "Enter number of edges: ";
-        cin >> E;
-
-        g = new Graph(V);
-
-        g->generateRandomGraph(E);
-
-        int start = 0;
-
-        cout << "\nLarge random graph generated successfully.\n";
-        cout << "Traversal output hidden for large graph.\n";
-
-        // Sequential BFS
-        auto start_time = high_resolution_clock::now();
-
-        g->sequentialBFS(start, false);
-
-        auto end_time = high_resolution_clock::now();
-
-        cout << "\nSequential BFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
-
-        // Parallel BFS
-        start_time = high_resolution_clock::now();
-
-        g->parallelBFS(start, false);
-
-        end_time = high_resolution_clock::now();
-
-        cout << "Parallel BFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
-
-        // Sequential DFS
-        start_time = high_resolution_clock::now();
-
-        g->sequentialDFS(start, false);
-
-        end_time = high_resolution_clock::now();
-
-        cout << "Sequential DFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
-
-        // Parallel DFS
-        start_time = high_resolution_clock::now();
-
-        g->parallelDFS(start, false);
-
-        end_time = high_resolution_clock::now();
-
-        cout << "Parallel DFS Time: "
-             << duration_cast<microseconds>(end_time - start_time).count()
-             << " microseconds\n";
-    }
-
-    else
-    {
-        cout << "\nInvalid Choice\n";
-    }
-}
     return 0;
 }
-
 
 // For manual input
 // Enter number of vertices: 5
@@ -454,7 +418,9 @@ while (true)
 // 0 2
 // 1 3
 // 2 4
-// 3 4
+// 3 42
 // 1 2
 
 // Enter starting vertex: 0
+
+// for random : 4000, 100000
