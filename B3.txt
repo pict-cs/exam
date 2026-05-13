@@ -34,6 +34,27 @@ train_df.head()
 
 
 
+# If only 1 csv file then
+from sklearn.model_selection import train_test_split
+
+# Load single CSV dataset
+df = pd.read_csv("fashion-mnist.csv")
+
+print("Dataset Shape:", df.shape)
+
+# Split into training and testing
+train_df, test_df = train_test_split(
+    df,
+    test_size=0.2,
+    random_state=42
+)
+
+print("Training Dataset Shape:", train_df.shape)
+print("Testing Dataset Shape:", test_df.shape)
+
+
+
+
 # Step 3: Dataset information
 
 print("\nTraining Dataset Info:")
